@@ -169,3 +169,19 @@ python run.py [--load_cache] [--visualize]
 </p>
 
 2. Due to simulation limits (`execute_action`), the robot’s optimization and execution run at a low frequency (`~6 Hz`). If the robot struggles to reach the target pose, please adjust threshold or deploy in a real environment.
+
+---
+
+## 🔑 Acknowledgments
+
+- **Simulation Environments**  
+  The simulation environments are based on [OmniGibson](https://behavior.stanford.edu/omnigibson/getting_started/installation.html) and [Isaac Gym](https://developer.nvidia.com/isaac-gym).
+
+- **Language Model Integration**  
+  The extension of Language Model Programs (LMPs) is built upon [Voxposer](https://voxposer.github.io/) and [Code as Policies](https://code-as-policies.github.io/).
+
+- **Motion Planning**  
+  The Model Predictive Path Integral (MPPI) algorithm implemented on Isaac Gym is adopted from [m3p2i-aip](https://autonomousrobots.nl/paper_websites/m3p2i-aip).
+
+- **Code Snippets Reference**  
+  Part of the environment code is adapted from the [ReKep](https://rekep-robot.github.io/) project.
