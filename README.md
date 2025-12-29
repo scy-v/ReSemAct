@@ -1,4 +1,4 @@
-# ReSemAct: Enhancing Fine-Grained Robotic Manipulation with Semantic Structuring and Affordance Refinement
+# ReSemAct: Advancing Fine-Grained Robotic Manipulation via Semantic Structuring and Affordance Refinement
 
 <h3 align="center">
   <a href="https://ReSemAct.github.io/">[Project Page]</a>
