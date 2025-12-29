@@ -18,19 +18,6 @@ t_tube_pose = t_tube_state.get("refined", t_tube_state["extracted"])["init"][0][
 t_tube_pose[2] += 0.1
 ret_val = compute_pos_diff(ee_pos[2], t_tube_pose[2], threshold=0.008)
 
-#Query: Check if the fork is 20cm above the plate.
-ee_pos = get_ee_pos()
-ee_quat = get_ee_quat()
-fork_state = parse_object_state("fork")
-plate_state = parse_object_state("plate")
-fork_pose = fork_state.get("refined", fork_state["extracted"])["move"][0]()[:]
-plate_pose = plate_state.get("refined", plate_state["extracted"])["move"][0]()[:] # "move" needs callback ()
-fork_orientation = transform_orientation(name="fork", xyzw=fork_pose[3:], convention='xyz', angle=None, type="world")
-plate_pose[2] += 0.2
-pos_diff = compute_pos_diff(fork_pose[:3], plate_pose[:3], threshold=0.008)
-ori_diff = compute_orientation_diff(ee_quat, fork_orientation, threshold=0.09)
-ret_val = pos_diff and ori_diff
-
 #Query: Check if the pen is vertical.
 ee_pos = get_ee_pos()
 pen_state = parse_object_state("pen")
@@ -54,3 +41,16 @@ ret_val = pos_diff and ori_diff
 ee_quat = get_ee_quat()
 ee_x_vector = get_ee_axis_vector(ee_wxyz, axis='x')
 ret_val = compute_vector_diff(ee_x_vector, axis="z", threshold=20, degree=135, direction='positive')
+
+#Query: Check if the fork is 20cm above the plate.
+ee_pos = get_ee_pos()
+ee_quat = get_ee_quat()
+fork_state = parse_object_state("fork")
+plate_state = parse_object_state("plate")
+fork_pose = fork_state.get("refined", fork_state["extracted"])["move"][0]()[:]
+plate_pose = plate_state.get("refined", plate_state["extracted"])["move"][0]()[:] # "move" needs callback ()
+fork_orientation = transform_orientation(name="fork", xyzw=fork_pose[3:], convention='xyz', angle=None, type="world")
+plate_pose[2] += 0.2
+pos_diff = compute_pos_diff(fork_pose[:3], plate_pose[:3], threshold=0.022)
+ori_diff = compute_orientation_diff(ee_quat, fork_orientation, threshold=0.09)
+ret_val = pos_diff and ori_diff

@@ -1,12 +1,12 @@
 from task_utils import subtask_exec
-from inference_utils import constraint_extraction
+from inference_utils import semantic_structuring
 
 #Query: Please Pick up the beaker and place it onto the chemical station.
-constraint_extraction("Extract constraints for beaker’s opening and chemical station's center, and refine the constraint for the beaker's opening")
+semantic_structuring("Extract anchors for beaker’s opening and chemical station's center, and refine the anchor for the beaker's opening")
 tasks = [
     "Grasp the beaker",
     "Raise the beaker to a height of 20 cm",
-    "Move the breaker 16cm above the chemical station",
+    "Move the breaker 17cm above the chemical station",
     "Open the gripper"
     ]
 
@@ -19,7 +19,7 @@ while current_task < len(tasks):
 # done
 
 #Query: Hold the chopstick by the thick end and place it vertically into the holder.
-constraint_extraction("Extract constraints for chopstick’s center and holder's center, and refine the constraints for both the chopstick's thick end and the holder's opening")
+semantic_structuring("Extract anchors for chopstick’s center and holder's center, and refine the anchors for both the chopstick's thick end and the holder's opening")
 tasks = [
     "Grasp the chopstick",
     "Raise the chopstick to a height of 20 cm",
@@ -49,7 +49,7 @@ while current_task < len(tasks):
 # done
 
 #Query: Please pass me a tissue.
-constraint_extraction("Extract constraints for tissue, not tissue box")
+semantic_structuring("Extract anchors for tissue, not tissue box")
 tasks = [   
     "grasp the tissue",
     "Raise the tissue to a height of 10 cm"
@@ -75,7 +75,7 @@ while current_task < len(tasks):
 # done
 
 #Query: Pick up the volumetric flask and pour the liquid into the dish.
-constraint_extraction("Extract constraints for volumetric flask’s opening and dish's center, and refine the constraint for the volumetric flask's opening")
+semantic_structuring("Extract anchors for volumetric flask’s opening and dish's center, and refine the anchor for the volumetric flask's opening")
 tasks = [
     "Grasp the volumetric flask",
     "Raise the volumetric flask at a height of 25 cm",

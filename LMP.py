@@ -131,7 +131,7 @@ class LMP:
         lvars = kwargs
 
         # return function instead of executing it so haiwe can replan using latest obs（do not do this for high-level UIs)
-        if not self._name in ['task_planner', 'constraint_extraction']:
+        if not self._name in ['task_planner', 'semantic_structuring']:
             to_exec = 'def ret_val():\n' + to_exec.replace('ret_val = ', 'return ')
             to_exec = to_exec.replace('\n', '\n    ')
 
@@ -156,7 +156,7 @@ class LMP:
             self._variable_vars.update(lvars)
 
         if self._cfg['has_return']:
-            if self._name == "constraint_refinement" or self._name == "subtask_exec":
+            if self._name == "affordance_refinement" or self._name == "subtask_exec":
                 return lvars[self._cfg['return_val_name']]()
             
             if self._name == "costfunc_building":

@@ -49,65 +49,65 @@ class LMP_interface():
         return ANGLE_OBJECT_INFO[object_name][axis_map[axis]]
     
     def mllm_inference(self, query="", type="extract", objects=[None],  params=[None]):
-        """Extract or refine constraints using MLLM inference."""
+        """Extract or refine affordance using MLLM inference."""
         return self._env.vision_infer.mllm_inference(query=query, type=type, objects=objects, params=params)
 
-    def get_2d_coords(self, extracted_constr):
-        """Get 2D coordinates of constraints."""
-        return self._env.get_2d_coords(extracted_constr)
+    def get_2d_coords(self, extracted_anchor):
+        """Get 2D coordinates of anchors."""
+        return self._env.get_2d_coords(extracted_anchor)
 
-    def map_constraints(self, constr_coords, objects):
+    def map_affordance(self, anchor_coords, objects):
         """
-        Check if constr_coords keys match the objects list.
+        Check if anchor_coords keys match the objects list.
 
         Args:
-            constr_coords (dict): Constraints by object name.
+            anchor_coords (dict): Anchors by object name.
             objects (list): Expected object names.
 
         Returns:
             bool: True if keys match objects exactly.
         """
-        self.constr_coords = constr_coords
-        return list(constr_coords.keys()) == objects
+        self.anchor_coords = anchor_coords
+        return list(anchor_coords.keys()) == objects
     
-    def register_save_constraints(self, constr_state):
-        """Register and save constraint state."""
-        register_constr_state = self._env.register_constr(constr_state)
-        self.constr_state = self._env.get_movable_constr_pos(register_constr_state)
+    def register_save_anchors(self, anchor_state):
+        """Register and save anchor state."""
+        register_anchor_state = self._env.register_anchor(anchor_state)
+        self.anchor_state = self._env.get_movable_anchor_pos(register_anchor_state)
         
-    def transform_to_label(self, constr_coords):
-        """Map constraint coordinates to label."""
-        return self._env.transform_to_label(constr_coords)
+    def transform_to_label(self, anchor_coords):
+        """Map anchor coordinates to label."""
+        return self._env.transform_to_label(anchor_coords)
 
     def transform_to_coords(self, label):
-        """Map label to constraint coordinates."""
+        """Map label to anchor coordinates."""
         return self._env.transform_to_coords(label)
     
     def parse_object_state(self, object):
         """
-        Retrieve constraint state for a given object.
+        Retrieve anchor state for a given object.
 
         Args:
             object (str): Object name.
 
         Returns:
-            dict: Constraint state of the object.
+            dict: Anchor state of the object.
         """
-        return self.constr_state[object]
+        return self.anchor_state[object]
     
-    def parse_constr_coords(self, object):
+    def parse_anchor_coords(self, object):
         """
-        Get 2D constraint coordinates for a specified object.
+        Get 2D anchor coordinates for a specified object.
 
         Args:
             object (str): Object name.
 
         Returns:
-            list or dict: 2D constraint coordinates for the object.
+            list or dict: 2D anchor coordinates for the object.
         """
-        if object not in self.constr_coords:
+        if object not in self.anchor_coords:
             raise KeyError(f"Object '{object}' not found in keypoints.")
-        return self.constr_coords[object]
+        return self.anchor_coords[object]
     
     def parse_object_pose(self, object):
         """
@@ -126,27 +126,27 @@ class LMP_interface():
             
         return object_pose - self._env.robot_initial_position
     
-    def merge_constraints_state(self, constr_state, refined_constr, objects=None, type=""):
+    def merge_anchor_state(self, anchor_state, refined_anchor, objects=None, type=""):
         """
-        Merge refined constraint coordinates into the constraint state.
+        Merge refined anchor coordinates into the anchor state.
 
         Args:
-            constr_state: Existing constraint state dictionary.
-            refined_constr: List of refined constraint coordinates (as arrays).
+            anchor_state: Existing anchor state dictionary.
+            refined_anchor: List of refined anchor coordinates (as arrays).
             objects: List of object names. Defaults to [""] if None.
-            type: Constraint type key (e.g., "refined").
+            type: Anchor type key (e.g., "refined").
 
         Returns:
-            Updated constraint state with new constraint data merged in.
+            Updated anchor state with new anchor data merged in.
         """
         if objects is None:
             objects = [""]
 
-        for obj, constr_list in zip(objects, refined_constr):
-            constr_state.setdefault(obj, {}).setdefault(type, {}).setdefault('init', [])
-            constr_state[obj][type]['init'].append(constr_list.flatten().tolist()) 
+        for obj, anchor_list in zip(objects, refined_anchor):
+            anchor_state.setdefault(obj, {}).setdefault(type, {}).setdefault('init', [])
+            anchor_state[obj][type]['init'].append(anchor_list.flatten().tolist()) 
 
-        return constr_state
+        return anchor_state
     
     def show_pts_points(self, points):
         """
@@ -158,20 +158,20 @@ class LMP_interface():
         points = points + self._env.robot_initial_position
         self.visualizer.visualize_points(points)
         
-    def get_mask_edge_coords(self, constr_coords, offset=0):
+    def get_mask_edge_coords(self, anchor_coords, offset=0):
         """
-        Positional Constraint Refinement.
+        Positional Refinement Flow.
             Step 1: Extraction of 3D Coordinates Along Mask Edges.
 
         Args:
-            constr_coords: [x, y, mask_index] — center pixel and mask index.
+            anchor_coords: [x, y, mask_index] — center pixel and mask index.
             offset: Distance to push edge points away from the center.
 
         Returns:
             List of (x, y) edge coordinates.
         """
-        mask_idx = int(constr_coords[0][2])
-        cx, cy = map(int, constr_coords[0][:2])
+        mask_idx = int(anchor_coords[0][2])
+        cx, cy = map(int, anchor_coords[0][:2])
 
         mask = self._env.clustered_ann[mask_idx].cpu().numpy().astype(bool)
         height, width = mask.shape
@@ -196,16 +196,16 @@ class LMP_interface():
 
         return edge_coords
         
-    def pos_constr_refine(self, coords):
+    def pos_anchor_refine(self, coords):
         """
-        Positional Constraint Refinement.
+        Positional Refinement Flow.
             Step 2: Density Peak Estimation and Maximum Height Filtering.
-            Step 3: Extraction of centrally symmetric point pairs.
+            Step 3: Centrally Symmetric Point Pairs as Affordance
         Args:
-            coords: 2D coordinates used to locate relevant 3D constraint points.
+            coords: 2D coordinates used to locate relevant 3D anchor points.
 
         Returns:
-            np.ndarray: A single 3D point representing the refined constraint location.
+            np.ndarray: A single 3D point representing the refined anchor location.
         """
         # Get point cloud from VFM camera
         point_cloud = self._env.cams[0].get_obs()['points']
@@ -228,16 +228,16 @@ class LMP_interface():
         # Step 2: Maximum Height Filtering
         filtered_points_3d, filtered_coords_2d = self._filter_by_max_z(filtered_points_3d, filtered_coords_2d, threshold=0.02)
         
-        # Step 3: Extraction of centrally symmetric point pairs.
-        refined_pos_constr, symmetric_pair_3d = self._find_most_symmetric_pair(
+        # Step 3: Targets.
+        refined_pos_anchor, symmetric_pair_3d = self._find_most_symmetric_pair(
             filtered_coords_2d, filtered_points_3d, coords[0]
         )
         
         # Visualize
         if self._env.visualize:
-            self.show_pts_points(np.concatenate((refined_pos_constr.reshape(1, -1), symmetric_pair_3d), axis=0))
+            self.show_pts_points(np.concatenate((refined_pos_anchor.reshape(1, -1), symmetric_pair_3d), axis=0))
         
-        return refined_pos_constr
+        return refined_pos_anchor
     
     def convert_2d_to_3d(self, coords):
         """
@@ -254,39 +254,39 @@ class LMP_interface():
         coords_3d = np.stack(coords_3d, axis=0)
         return coords_3d - self._env.robot_initial_position
     
-    def get_3d_state(self, constr_coords):
+    def get_3d_state(self, anchor_coords):
         """
-        Get 3D state from 2D constraint coordinates.
+        Get 3D state from 2D anchor coordinates.
 
         Args:
-            constr_coords: 2D constraint points.
+            anchor_coords: 2D anchor points.
 
         Returns:
             np.ndarray: 3D points after bilinear interpolation.
         """
         points = self._env.cams[0].get_obs()['points']
-        constr_state = self._get_3d_point_bilinear(points, constr_coords, self._env.robot_initial_position)
-        return constr_state
+        anchor_state = self._get_3d_point_bilinear(points, anchor_coords, self._env.robot_initial_position)
+        return anchor_state
     
-    def get_constr_to_ee(self, constr_pose):
+    def get_anchor_to_ee(self, anchor_pose):
         """
-        Calculate constraint position relative to end-effector (EE) frame.
+        Calculate anchor position relative to end-effector (EE) frame.
 
         Args:
-            constr_pose: Constraint pose (at least 3D position).
+            anchor_pose: Anchor pose (at least 3D position).
 
         Returns:
-            tuple: Constraint position in EE coordinate frame.
+            tuple: Anchor position in EE coordinate frame.
         """
-        constr_pos = np.array(constr_pose[:3])
+        anchor_pos = np.array(anchor_pose[:3])
         ee_pos = self._env.get_ee_pos()
         ee_quat = self._env.get_ee_quat()
         
-        relative_pos = constr_pos - ee_pos
+        relative_pos = anchor_pos - ee_pos
         ee_rot = R.from_quat(ee_quat[[1, 2, 3, 0]])
-        constr_in_ee = ee_rot.inv().apply(relative_pos)
+        anchor_in_ee = ee_rot.inv().apply(relative_pos)
         
-        return tuple(constr_in_ee)
+        return tuple(anchor_in_ee)
     
     def mppi_exec(self, pre_conditions=None, costs=None, post_conditions=None, gripper_command=None):
         """Communicate with Isaac Gym MPPI server to obtain control commands based on conditions and cost, then execute on the robot."
@@ -586,11 +586,11 @@ class LMP_interface():
 
         return avg_3d, pair_3d
     
-    def _get_3d_point_bilinear(self, point_cloud, constr_coords, init_position):
+    def _get_3d_point_bilinear(self, point_cloud, anchor_coords, init_position):
         """
         Args:
             point_cloud (np.ndarray): [H, W, 3] array of 3D points
-            constr_coords (dict): 2D keypoints {obj: {key: [[x, y], ...]}}
+            anchor_coords (dict): 2D keypoints {obj: {key: [[x, y], ...]}}
             init_position (np.ndarray): reference 3D position to subtract
 
         Returns:
@@ -599,7 +599,7 @@ class LMP_interface():
         results = {}
         H, W, _ = point_cloud.shape
 
-        for obj, data in constr_coords.items():
+        for obj, data in anchor_coords.items():
             results[obj] = {}
 
             for key, coords_list in data.items():

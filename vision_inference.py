@@ -33,7 +33,7 @@ class VisionInference():
 
         # Path setup
         self.image = get_abs_path(self.vfm_config['image'])
-        self.part_level_constr = get_abs_path(self.vfm_config['part_level_constr'])
+        self.clustered_anchor = get_abs_path(self.vfm_config['clustered_anchor'])
         self.extracted_mask = get_abs_path(self.vfm_config['extracted_mask'])
         self.refined_label_grid = get_abs_path(self.vfm_config['refined_label_grid'])
         self.mllm_inference_dir = get_abs_path(self.vfm_config["mllm_inference"])
@@ -60,38 +60,38 @@ class VisionInference():
         del self.fastsam_model  # Delete the model instance to free up memory
         torch.cuda.empty_cache()  # Empty the cache to release unused memory
         
-    def constraints_process(self, ann):
-        """Part-Level Constraint Extraction
+    def affordance_process(self, ann):
+        """
             Step 1: Mask Filtering.
-            Step 2: Part-Level Semantic Consistency Clustering.
+            Step 2: Visual Consistency Clustering.
         """
         #mark
-        constraint_img, _ = self.mark_constr_number(ann)
-        img_save(constraint_img, output=self.vfm_config["constr"])
+        marked_img, _ = self.mark_affordance_number(ann)
+        img_save(marked_img, output=self.vfm_config["anchor"])
         if self.env_config["visualize"]:
-            img_show(constraint_img, title='marked_ann')
+            img_show(marked_img, title='marked_ann')
 
         # filter mask
         filtered_ann = self.filter_masks(ann)
         self.fastsam_plot(filtered_ann, self.vfm_config["filtered_mask"])
         
         #mark
-        constraint_img, _ = self.mark_constr_number(filtered_ann)
-        img_save(constraint_img, output=self.vfm_config["filtered_constr"])
+        marked_img, _ = self.mark_affordance_number(filtered_ann)
+        img_save(marked_img, output=self.vfm_config["filtered_anchor"])
         if self.env_config["visualize"]:
-            img_show(constraint_img, title='marked_filtered_ann')
+            img_show(marked_img, title='marked_filtered_ann')
 
         #cluster mask
         clustered_ann = self.cluster_masks(filtered_ann)
         self.fastsam_plot(clustered_ann, self.vfm_config["clustered_mask"])
         
         #mark
-        constraint_img, constraint_coords = self.mark_constr_number(clustered_ann)
-        img_save(constraint_img, output=self.vfm_config["clustered_constr"])
+        marked_img, affordance_coords = self.mark_affordance_number(clustered_ann)
+        img_save(marked_img, output=self.vfm_config["clustered_anchor"])
         if self.env_config["visualize"]:
-            img_show(constraint_img, title='marked_cluster_ann')
+            img_show(marked_img, title='marked_cluster_ann')
         
-        return clustered_ann, constraint_coords
+        return clustered_ann, affordance_coords
     
     def fastsam_plot(self, ann, output):
         """Plot and save annotations"""
@@ -100,7 +100,7 @@ class VisionInference():
     def _build_extraction_prompt(self, query, objects):
         """Build a prompt message for the "extract" type."""
         base64_img = encode_image(self.image)
-        base64_constr = encode_image(self.part_level_constr)
+        base64_anchor = encode_image(self.clustered_anchor)
         with open(os.path.join(self.mllm_inference_dir, self.vfm_config["extraction_prompt"]), 'r') as f:
             self.prompt_extract = f.read()
             
@@ -121,7 +121,7 @@ class VisionInference():
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/png;base64,{base64_constr}"
+                            "url": f"data:image/png;base64,{base64_anchor}"
                         }
                     },
                 ]
@@ -132,10 +132,10 @@ class VisionInference():
     def _build_refinement_prompt(self, query, params):
         """Build a prompt message for the "geometry_refine" type."""
         base64_img = encode_image(self.image), 
-        base64_constr = encode_image(self.part_level_constr)
+        base64_anchor = encode_image(self.clustered_anchor)
         base64_extrac_mask = encode_image(self.extracted_mask)
         base64_refined_label_grid = encode_image(self.refined_label_grid)
-        extracted_constr, label_at_scaled = params
+        extracted_anchor, label_at_scaled = params
         with open(os.path.join(self.mllm_inference_dir, self.vfm_config["refinement_prompt"]), 'r') as f:
             self.prompt_refine = f.read()
             
@@ -146,7 +146,7 @@ class VisionInference():
                 "content": [
                     {
                         "type": "text",
-                        "text": self.prompt_refine.format(extracted_constr=extracted_constr, mark_label=label_at_scaled, query=query)
+                        "text": self.prompt_refine.format(extracted_anchor=extracted_anchor, mark_label=label_at_scaled, query=query)
                     },
                     {
                         "type": "image_url",
@@ -157,7 +157,7 @@ class VisionInference():
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/png;base64,{base64_constr}"
+                            "url": f"data:image/png;base64,{base64_anchor}"
                         }
                     },                    
                     {
@@ -205,23 +205,23 @@ class VisionInference():
         messages = prompt_builders[type](query, params) if type == "geometry_refine" else prompt_builders[type](query, objects)
         
         # Call the MLLM model to get inference results
-        constr_info = self.client.chat.completions.create(
+        result_info = self.client.chat.completions.create(
             model=self.vfm_config["model"],
             messages=messages,
             temperature=self.vfm_config["temperature"],
             stream=False
         ).choices[0].message.content
         
-        print(constr_info)
+        print(result_info)
         
         # Clean and parse the returned JSON content
-        constr_info_dict = self._clean_and_parse_json(constr_info)
+        result_info_dict = self._clean_and_parse_json(result_info)
         
         # Return result based on the prompt type
         if type == "geometry_refine":
-            return constr_info_dict.get("label")
+            return result_info_dict.get("label")
         
-        return constr_info_dict
+        return result_info_dict
 
 
     def _clean_and_parse_json(self, content: str) -> dict:
@@ -278,7 +278,7 @@ class VisionInference():
         return torch.from_numpy(np.array(filtered_final)).to(self.device)
 
     def cluster_masks(self, annotation):
-        """Step 2: Part-Level Semantic Consistency Clustering."""
+        """Step 2: Visual Consistency Clustering."""
         annotation = annotation.cpu().numpy()
         centers = []
 
@@ -306,16 +306,16 @@ class VisionInference():
 
         return torch.from_numpy(np.array(clustered_masks)).to(self.device)
 
-    def mark_constr_number(self, annotation):
+    def mark_affordance_number(self, annotation):
         """
         Draws a rectangular marker with an index number at the center of each annotation mask.
 
         Args:
-            annotation (Tensor): A tensor of boolean masks indicating constraint regions.
+            annotation (Tensor): A tensor of boolean masks indicating regions.
 
         Returns:
-            constraint_img (PIL.Image): Image with drawn constraint rectangles and indices.
-            constraint_coords (dict): Mapping from index (str) to (x, y) center coordinates.
+            marked_img (PIL.Image): Image with drawn anchor rectangles and indices.
+            affordance_coords (dict): Mapping from index (str) to (x, y) center coordinates.
         """
         # Load and convert the image to RGB
         image = Image.open(self.image).convert("RGB")
@@ -331,7 +331,7 @@ class VisionInference():
         # Convert annotation tensor to NumPy array
         annotation = annotation.cpu().numpy()
 
-        constraint_coords = {}
+        affordance_coords = {}
 
         outer_offset = self.vfm_config["outer_offset"]
         inner_offset = self.vfm_config["inner_offset"]
@@ -346,7 +346,7 @@ class VisionInference():
             # Calculate the center coordinate of the mask
             center_x = int(np.mean(x_indices))
             center_y = int(np.mean(y_indices))
-            constraint_coords[str(idx)] = (center_x, center_y)
+            affordance_coords[str(idx)] = (center_x, center_y)
             
             # Draw inner rectangle (white background)
             draw.rectangle(
@@ -381,5 +381,5 @@ class VisionInference():
                 font=font
             )
 
-        constraint_img = image
-        return constraint_img, constraint_coords
+        marked_img = image
+        return marked_img, affordance_coords

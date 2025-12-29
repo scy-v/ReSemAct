@@ -1,4 +1,4 @@
-name: ReSem3D
+name: ReSemAct
 device: &device 'cuda'
 bounds_min: &bounds_min [-0.45, -0.75, 0.698]
 bounds_max: &bounds_max [0.10, 0.60, 1.2]
@@ -35,12 +35,11 @@ env:
     refinement_prompt: mllm_inference_prompt/mllm_refinement_prompt.txt
     mllm_inference:  prompts/omnigibson
     mask: result/ann.png
-    constr: result/constr.png
+    anchor: result/anchor.png
     filtered_mask: result/filtered_ann.png
-    filtered_constr: result/filtered_constr.png
+    filtered_anchor: result/filtered_anchor.png
     clustered_mask: &clustered_mask result/clustered_ann.png
-    clustered_constr: &clustered_constr_mask result/clustered_constr.png
-    part_level_constr: *clustered_constr_mask
+    clustered_anchor: result/clustered_anchor.png
     extracted_mask: *clustered_mask
     refined_label_grid: "result/refined_label_grid.png"
     refined_mask: "result/refined_ann.png"
@@ -103,9 +102,9 @@ env:
 
   lmp_config:
     lmps:
-      constraint_extraction:
+      semantic_structuring:
         layer: 2-1
-        prompt_fname: constraint_extraction_prompt
+        prompt_fname: semantic_structuring_prompt
         model: gpt-4o
         max_tokens: 512
         temperature: 0
@@ -118,9 +117,9 @@ env:
         has_return: False
         return_val_name: ret_val
 
-      constraint_refinement:
+      affordance_refinement:
         layer: 3-1
-        prompt_fname: constraint_refinement_prompt
+        prompt_fname: affordance_refinement_prompt
         model: gpt-4o
         max_tokens: 512
         temperature: 0

@@ -1,0 +1,32 @@
+from utils import convert_2d_to_3d
+from inference_utils import mllm_inference
+from perception_utils import parse_anchor_coords, get_mask_edge_coords, transform_to_label, transform_to_coords, pos_anchor_refine
+
+#Query: Get the extracted anchors, and refine the anchor for the red mug’s opening
+#positional refinement flow
+anchor_coords = parse_anchor_coords("red_mug")["extracted"]
+edge_coords = get_mask_edge_coords(anchor_coords)
+refined_pos_anchor = pos_anchor_refine(edge_coords)
+ret_val = [refined_pos_anchor]
+
+#Query: Get the extracted anchors, and refine the anchors for both the stick's thick end and the evaporating dish's opening.
+#geometry refinement flow
+anchor_coords = parse_anchor_coords("stick")["extracted"]
+label = transform_to_label(anchor_coords)
+refined_label = mllm_inference("Refine the anchors for the stick's thick end.", type="geometry_refine", params=[anchor_coords[-1], label])
+refined_coords = transform_to_coords(refined_label)
+refined_geom_anchor = convert_2d_to_3d(refined_coords)
+#positional refinement flow
+anchor_coords = parse_anchor_coords("evaporating_dish")["extracted"]
+edge_coords = get_mask_edge_coords(anchor_coords)
+refined_pos_anchor = pos_anchor_refine(edge_coords)
+ret_val = [refined_geom_anchor, refined_pos_anchor]
+
+#Query: Get the extracted anchors, and refine the anchor for the pen's cap.
+#geometry refinement flow
+anchor_coords = parse_anchor_coords("pen")["extracted"]
+label = transform_to_label(anchor_coords)
+refined_label = mllm_inference("Refine the anchor for the pen's cap.", type="geometry_refine", params=[anchor_coords[-1], label])
+refined_coords = transform_to_coords(refined_label)
+refined_geom_anchor = convert_2d_to_3d(refined_coords)
+ret_val = [refined_geom_anchor]

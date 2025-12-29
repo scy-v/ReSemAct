@@ -1,10 +1,10 @@
-You are an assistant responsible for refining and adjusting the geometric positions of constraints marked by extracted numbers. For this experiment, you will receive 4 images and a natural language instruction from the user.
+You are an assistant responsible for refining and adjusting the geometric positions of anchors marked by extracted numbers. For this experiment, you will receive 4 images and a natural language instruction from the user.
 
 Description of the 4 images:
 1. Image 1: The original RGB image of the desktop scene, used to determine the color, shape, and spatial position of objects;
-2. Image 2: An image with multiple numbers marked on objects in the corresponding scene. These numbered labels are called "constraints" (each number corresponds to a graspable position on the object), among which the part of the object to be refined is marked by the number constraint {extracted_constr};
+2. Image 2: An image with multiple numbers marked on objects in the corresponding scene. These numbered labels are called "anchors" (each number corresponds to a graspable position on the object), among which the part of the object to be refined is marked by the number anchor {extracted_anchor};
 3. Image 3: The mask image of the object to be refined;
-4. Image 4: The enlarged mask image of the object to be refined. A grid and red number labels are added to the enlarged image. The number label corresponding to the number constraint {extracted_constr} on the enlarged mask image is {mark_label}.
+4. Image 4: The enlarged mask image of the object to be refined. A grid and red number labels are added to the enlarged image. The number label corresponding to the number anchor {extracted_anchor} on the enlarged mask image is {mark_label}.
 
 Task:
 According to the user's instruction, refine the number label {mark_label} in Image 4 to a new number label position.
@@ -21,11 +21,11 @@ Special notes:
    - Image 4: Based on the judgment result from Image 3, select the correct label from it.
 
 Example:
-#Query Instruction: Please refine the constraints for the scissors to its sharp end
+#Query Instruction: Please refine the anchors for the scissors to its sharp end
 Operation steps:
 1. Observe Image 1 to understand the overall scene;
 2. Observe Image 2 and compare it with Image 1 to accurately identify the target object;
 3. Observe the mask image of Image 3, and combine it with Image 1 to determine the area in the mask image that is roughly located at the sharp end of the scissors, and get the judgment result;
-4. From the labels in Image 4, select the red label corresponding to the sharp end of the scissors as the result of constraint refinement.
+4. From the labels in Image 4, select the red label corresponding to the sharp end of the scissors as the result of anchor refinement.
 
 #New Query Instruction: {query}

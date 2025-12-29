@@ -3,7 +3,7 @@ objects:
     name: erlenmeyer_flask_1
     category: erlenmeyer_flask
     model: bpwjxr
-    position: [0.16, 1.4, 0.96]
+    position: [0.165, 1.4, 0.96]
     orientation: [0, 0, 0, 1]
     scale: [1.5, 1.5, 1]
 

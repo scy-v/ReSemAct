@@ -1,7 +1,7 @@
-# ReSem3D: Refinable 3D Spatial Constraints via Fine-Grained Semantic Grounding for Generalizable Robotic Manipulation
+# ReSemAct: Enhancing Fine-Grained Robotic Manipulation with Semantic Structuring and Affordance Refinement
 
 <h3 align="center">
-  <a href="https://resem3d.github.io/">[Project Page]</a>
+  <a href="https://ReSemAct.github.io/">[Project Page]</a>
 </h3>
 
 <p align="center">
@@ -16,30 +16,20 @@
 - **CUDA**: 12.2  
 - **NVIDIA Driver**: 535.161.07  
 - **Conda Environments**:  
-  - `ReSem3D` (Client)  
+  - `ReSemAct` (Client)  
   - `m3p2i-aip` (Server)  
 
 ---
 
-## 🔧 Client Setup (`ReSem3D`)
-
-### 1. Configure Conda Channels
-
-```bash
-conda config --add channels conda-forge
-conda config --set channel_priority strict
-```
-
-### 2. Create Conda Environment
+## 🔧 Client Setup (`ReSemAct`)
+### 1. Create Conda Environment
 
 ```bash
-conda create -n ReSem3D python=3.10 
-conda activate ReSem3D
-conda config --set channel_priority flexible
-conda config --remove channels conda-forge
+conda create -n ReSemAct python=3.10 
+conda activate ReSemAct
 ```
 
-### 3. Install [OmniGibson](https://behavior.stanford.edu/omnigibson/getting_started/installation.html)
+### 2. Install [OmniGibson](https://behavior.stanford.edu/omnigibson/getting_started/installation.html)
 
 Install from source (editable mode), version `v1.1.0`:
 
@@ -59,35 +49,32 @@ Install OmniGibson:
 ```bash
 pip install -e .
 python -m omnigibson.install
-pip install Pillow==9.4.0
 ```
 
-> ⚠️ If you encounter errors related to `*-manylinux_2_31_*.whl not found`, rename all files in the ISAAC_SIM_PACKAGES folder from `linux_2_34` to `linux_2_31`.
-
-### 4. Test Installation
+### 3. Test Installation
 
 ```bash
 cd <BEHAVIOR-1K_folder>
 python -m omnigibson.examples.robots.robot_control_example --quickstart
 ```
 
-### 5. Clone the ReSem3D Repository
+### 4. Clone the ReSemAct Repository
 
 ```bash
-git clone https://github.com/scy-v/ReSem3D.git
+git clone https://github.com/scy-v/ReSemAct.git
 ```
 
-### 6. Install FastSAM and Download Weights
+### 5. Install FastSAM and Download Weights
 
 ```bash
-cd ReSem3D
+cd ReSemAct
 git clone https://github.com/CASIA-IVA-Lab/FastSAM.git
 ```
 
 Download the [FastSAM model weights](https://drive.usercontent.google.com/download?id=1m1sjY4ihXBU1fZXdQ-Xdj-mDltW-2Rqv&export=download)  
-Place the weights inside the `ReSem3D/weights/` directory.
+Place the weights inside the `ReSemAct/weights/` directory.
 
-### 7. Install Additional Dependencies
+### 6. Install Additional Dependencies
 ```bash
 pip install -r requirements_client.txt
 ```
@@ -98,7 +85,7 @@ pip install -r requirements_client.txt
 ### 1. Clone the [m3p2i-aip](https://github.com/tud-amr/m3p2i-aip.git) Repository and Create Environment
 
 ```bash
-cd <ReSem3D_folder>
+cd <ReSemAct_folder>
 git clone https://github.com/tud-amr/m3p2i-aip.git
 conda create -n m3p2i-aip python=3.8
 conda activate m3p2i-aip
@@ -111,22 +98,22 @@ Follow the [prerequisites guide](https://github.com/tud-amr/m3p2i-aip/blob/maste
 Move and install Isaac Gym:
 
 ```bash
-mv <Downloaded_Folder>/IsaacGym_Preview_4_Package <ReSem3D_folder>/m3p2i-aip/thirdparty/
-cd <ReSem3D_folder>/m3p2i-aip/thirdparty/IsaacGym_Preview_4_Package/isaacgym/python
+mv <Downloaded_Folder>/IsaacGym_Preview_4_Package <ReSemAct_folder>/m3p2i-aip/thirdparty/
+cd <ReSemAct_folder>/m3p2i-aip/thirdparty/IsaacGym_Preview_4_Package/isaacgym/python
 pip install -e .
 ```
 
 ### 3. Install `m3p2i-aip`
 
 ```bash
-cd <ReSem3D_folder>/m3p2i-aip
+cd <ReSemAct_folder>/m3p2i-aip
 pip install -e .
 ```
 
 ### 4. Install Additional Dependencies
 
 ```bash
-cd <ReSem3D_folder>
+cd <ReSemAct_folder>
 pip install -r requirements_server.txt
 ```
 
@@ -139,7 +126,7 @@ You need two terminals: one for the **server** and one for the **client**.
 ### 1. Start the Server
 
 ```bash
-cd <ReSem3D_folder>
+cd <ReSemAct_folder>
 python mppi_server.py
 ```
 
@@ -150,7 +137,7 @@ export OPENAI_API_KEY="your_api_key_here"
 ```
 or add it to `configs/omnigibson_config/config.yaml.` Then start running with:
 ```bash
-cd <ReSem3D_folder>
+cd <ReSemAct_folder>
 python run.py [--load_cache] [--visualize]
 ```
 

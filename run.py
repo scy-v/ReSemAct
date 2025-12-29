@@ -12,7 +12,7 @@ def get_config(config_path=None):
     return config
 
 def run(config, scene_path, objects_path, instruction):
-    """Set up the environment and run ReSem3D."""
+    """Set up the environment and run ReSemAct."""
     # Set up environment
     env = OGEnv(config['env'], scene_path, objects_path, verbose=False)
     env.vision_inference()
@@ -21,18 +21,18 @@ def run(config, scene_path, objects_path, instruction):
     visualizer = Visualizer(config, env)
     lmps = setup_LMP(env, config['env'], visualizer, debug=False)
 
-    # Execute the instruction through the ReSem3D task planner UI
-    ReSem3D_UI = lmps["task_planner_ui"]
-    ReSem3D_UI(instruction)
+    # Execute the instruction through the ReSemAct task planner UI
+    ReSemAct_UI = lmps["task_planner_ui"]
+    ReSemAct_UI(instruction)
 
 
 def main():
     """Program entry point: parse args, load config, and start running."""
-    parser = argparse.ArgumentParser(description="Run ReSem3D with configurable parameters.")
+    parser = argparse.ArgumentParser(description="Run ReSemAct with configurable parameters.")
     parser.add_argument("--load_cache", action="store_true", help="Enable cache in all LMP configs.")
     parser.add_argument("--visualize", action="store_true", help="Enable visualizer display.")
     parser.add_argument("--instruction", type=str, default="Please pick up the erlenmeyer flask and place it on the magnetic stirrer.",
-                        help="Natural language instruction for ReSem3D.")
+                        help="Natural language instruction for ReSemAct.")
     args = parser.parse_args()
 
     # Set paths

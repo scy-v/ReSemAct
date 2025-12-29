@@ -1,0 +1,30 @@
+from inference_utils import mllm_inference, affordance_refinement
+from perception_utils import get_2d_coords, map_affordance, merge_anchor_state, get_3d_state, register_save_anchors
+
+#Query: Extract anchors for bottle’s opening and electronic balance's center, and refine the anchor for the bottle's opening.
+objects = ["bottle", "electronic_balance"]
+extracted_anchor = mllm_inference("Extract anchors for bottle’s opening and electronic balance's center.", type="extract", objects=objects)
+anchor_coords = get_2d_coords(extracted_anchor)
+assert map_affordance(anchor_coords, objects), "anchors don't match the objects."
+refined_anchor = affordance_refinement("Get the extracted anchors, and refine the anchor for the bottle’s opening")
+anchor_state = get_3d_state(anchor_coords)
+anchor_state = merge_anchor_state(anchor_state, refined_anchor, objects=["bottle"], type="refined")
+register_save_anchors(anchor_state)
+
+#Query: Extract anchors for pen’s center and pen holder's center, and refine the anchors for both the pen's thick end and the pen holder's opening.
+objects = ["pen", "pen_holder"]
+extracted_anchor = mllm_inference("Extract anchors for pen’s center and pen holder's center.", type="extract", objects=objects)
+anchor_coords = get_2d_coords(extracted_anchor)
+assert map_affordance(anchor_coords, objects), "anchors don't match the objects."
+refined_anchor = affordance_refinement("Get the extracted anchors, and refine the anchors for both the pen's thick end and the pen holder's opening")
+anchor_state = get_3d_state(anchor_coords)
+anchor_state = merge_anchor_state(anchor_state, refined_anchor, objects=["pen", "pen_holder"], type="refined")
+register_save_anchors(anchor_state)
+
+#Query: Extract anchors for trash.
+objects = ["trash"]
+extracted_anchor = mllm_inference("Extract anchors for trash.", type="extract", objects=objects)
+anchor_coords = get_2d_coords(extracted_anchor)
+assert map_affordance(anchor_coords, objects), "anchors don't match the objects."
+anchor_state = get_3d_state(anchor_coords)
+register_save_anchors(anchor_state)

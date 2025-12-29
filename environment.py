@@ -99,19 +99,19 @@ class OGEnv:
     # = internal functions
     # ======================================
     
-    def _normalize_mask(self, constr_coords):
+    def _normalize_mask(self, coords):
         """
         Step 1: Normalize mask and get transform params.
 
         Args:
-            constr_coords (np.ndarray): coords + mask idx.
+            coords (np.ndarray): coords + mask idx.
 
         Returns:
             tuple or None: (bin_mask, params) or None if empty.
         """
 
         # get mask idx and mask array
-        mask_idx = int(constr_coords[0][2])
+        mask_idx = int(coords[0][2])
         raw_mask = self.clustered_ann[mask_idx].cpu().numpy()
 
         # binarize mask (1 or 0)
@@ -246,12 +246,12 @@ class OGEnv:
         return canvas, label_coords
 
 
-    def _associate_centroid_with_label(self, constr_coords, params, label_coords):
+    def _associate_centroid_with_label(self, coords, params, label_coords):
         """
         Step 3: Map original point to scaled space and extract label.
 
         Args:
-            constr_coords (np.ndarray): Original input coordinates.
+            coords (np.ndarray): Original input coordinates.
             params (dict): Transform parameters from step 1.
             label_coords (dict): Mapping from label ID to cell center (x, y).
 
@@ -259,7 +259,7 @@ class OGEnv:
             int or None: Associated label ID or None if not found.
         """
         # Extract original point
-        orig_x, orig_y = constr_coords[0][:2]
+        orig_x, orig_y = coords[0][:2]
 
         # Map to scaled space
         x_scaled = (orig_x - params['left']) / params['scale_x'] + params['top_left_x']
@@ -320,31 +320,31 @@ class OGEnv:
         img_tensor = self.cams[0].get_obs()['rgb']
         save_image(img_tensor, get_abs_path(self.vfm_config["image"]))
         ann = self.vision_infer.vfm_inference()
-        self.clustered_ann, self.constraint_coords = self.vision_infer.constraints_process(ann)
+        self.clustered_ann, self.affordance_coords = self.vision_infer.affordance_process(ann)
         self.vision_infer.delete_model()
         return ann
     
-    def transform_to_label(self, constr_coords):
+    def transform_to_label(self, coords):
         """
-        Geometric Constraint Refinement:
+        Geometric Refinement Flow:
             Step 1: mask normalization
             Step 2: grid construction and label embedding
             Step 3: centroid mapping and label association
 
         Args:
-            constr_coords (np.ndarray): Input point and mask index.
+            coords (np.ndarray): Input point and mask index.
 
         Returns:
             int or None: Assigned grid label or None if unmatched.
         """
         # Step 1: normalize mask and compute transform params
-        mask, transform_params = self._normalize_mask(constr_coords)
+        mask, transform_params = self._normalize_mask(coords)
 
         # Step 2: construct grid & label
         canvas, label_coords = self._construct_grid_and_labels(mask, transform_params)
 
         # Step 3: map point to label
-        label = self._associate_centroid_with_label(constr_coords, transform_params, label_coords)
+        label = self._associate_centroid_with_label(coords, transform_params, label_coords)
 
         # Save intermediate images
         Image.fromarray((mask * 255).astype(np.uint8)).save(get_abs_path(self.vfm_config['refined_mask']))
@@ -352,7 +352,7 @@ class OGEnv:
 
         # Visualization
         if self.visualize:
-            orig_pt = (constr_coords[0][0], constr_coords[0][1])
+            orig_pt = (coords[0][0], coords[0][1])
             scaled_pt = (
                 (orig_pt[0] - transform_params['left']) / transform_params['scale_x'] + transform_params['top_left_x'],
                 (orig_pt[1] - transform_params['top']) / transform_params['scale_y'] + transform_params['top_left_y']
@@ -380,8 +380,8 @@ class OGEnv:
 
     def transform_to_coords(self, scaled_labels):
         """
-        Geometric Constraint Refinement:
-            Step 5: Region-Level Constraint Generation
+        Geometric Refinement Flow:
+            Step 5: Refined Anchors as Affordance Targets
 
         Args:
             scaled_labels (List[int]): List of predicted labels on scaled grid.
@@ -437,20 +437,20 @@ class OGEnv:
         return original_coords
 
 
-    def get_2d_coords(self, extracted_constr):
+    def get_2d_coords(self, extracted_anchor):
         """
-        Get 2D coordinates for extracted constraints.
+        Get 2D coordinates for extracted anchors.
 
         Args:
-            extracted_constr (dict): Keys are constraint types, values contain 'extracted' list of IDs.
+            extracted_anchor (dict): Keys are types, values contain 'extracted' list of IDs.
 
         Returns:
             dict: Same keys, values have 'extracted' list of (x, y, id) tuples.
 
         """
         if self.debug:
-            total_ids = sum(len(item['extracted']) for item in extracted_constr.values())
-            user_input = input(f"Confirm constraint IDs. Current: {extracted_constr}. Enter {total_ids} IDs separated by spaces: ").strip()
+            total_ids = sum(len(item['extracted']) for item in extracted_anchor.values())
+            user_input = input(f"Confirm IDs. Current: {extracted_anchor}. Enter {total_ids} IDs separated by spaces: ").strip()
 
             if user_input == "":
                 print("No input, keep original IDs.")
@@ -460,21 +460,21 @@ class OGEnv:
                     raise ValueError(f"Input count {len(user_input_list)} does not match expected {total_ids}.")
 
                 idx = 0
-                for key in extracted_constr:
-                    count = len(extracted_constr[key]['extracted'])
-                    extracted_constr[key]['extracted'] = user_input_list[idx:idx + count]
+                for key in extracted_anchor:
+                    count = len(extracted_anchor[key]['extracted'])
+                    extracted_anchor[key]['extracted'] = user_input_list[idx:idx + count]
                     idx += count
 
-            print(f"Final IDs: {extracted_constr}")
+            print(f"Final IDs: {extracted_anchor}")
 
-        constr_coords = {}
-        for key, item in extracted_constr.items():
+        anchor_coords = {}
+        for key, item in extracted_anchor.items():
             coords = []
             for id in item['extracted']:
-                if str(id) in self.constraint_coords:
-                    coords.append((self.constraint_coords[str(id)][0], self.constraint_coords[str(id)][1], id))
-            constr_coords[key] = {'extracted': coords}
-        return constr_coords
+                if str(id) in self.affordance_coords:
+                    coords.append((self.affordance_coords[str(id)][0], self.affordance_coords[str(id)][1], id))
+            anchor_coords[key] = {'extracted': coords}
+        return anchor_coords
     
     def gripper_execute(self, gripper_command):
         """Execute open/close gripper command."""
@@ -495,30 +495,30 @@ class OGEnv:
             self.last_cam_obs[cam_id] = self.cams[cam_id].get_obs()  # each containing rgb, depth, points, seg
         return self.last_cam_obs
     
-    def register_constr(self, constr_dict):
+    def register_anchor(self, anchor_dict):
         """
-        Register constraints by finding closest mesh points in the environment and storing related data.
+        Register anchors by finding closest mesh points in the environment and storing related data.
 
         Args:
-            constr_dict (dict): Constraint data structured by object names and types ('extracted', 'refined').
+            anchor_dict (dict): Data structured by object names and types ('extracted', 'refined').
 
         Returns:
-            dict: Copy of constr_dict with added 'move' info: tuples of (mesh path, mesh pose, constraint position).
+            dict: Copy of anchor_dict with added 'move' info: tuples of (mesh path, mesh pose, position).
         """
         exclude_names = {'wall', 'floor', 'ceiling', 'table', 'frankapanda', 'robot', 'workbench'}
-        results = copy.deepcopy(constr_dict)
+        results = copy.deepcopy(anchor_dict)
 
-        for obj_name, constr_types in constr_dict.items():
-            for constr_type in ['extracted', 'refined']:
-                if constr_type not in constr_types:
+        for obj_name, anchor_types in anchor_dict.items():
+            for anchor_type in ['extracted', 'refined']:
+                if anchor_type not in anchor_types:
                     continue
 
-                constr_source = constr_types[constr_type]
+                anchor_source = anchor_types[anchor_type]
 
                 move_results = []
-                for values in constr_source.values():
-                    for constr_position in values:
-                        constr_position = np.add(constr_position, self.robot_initial_position).reshape(1, -1) 
+                for values in anchor_source.values():
+                    for anchor_position in values:
+                        anchor_position = np.add(anchor_position, self.robot_initial_position).reshape(1, -1) 
                         closest_distance = float('inf')
                         closest_prim_path, closest_point, closest_obj = None, None, None
 
@@ -535,17 +535,17 @@ class OGEnv:
                                     trimesh_object.apply_transform(PoseAPI.get_world_pose_with_scale(mesh.prim_path))
                                     points_transformed = trimesh_object.sample(1000)
 
-                                    dists = np.linalg.norm(points_transformed - constr_position, axis=1)
+                                    dists = np.linalg.norm(points_transformed - anchor_position, axis=1)
                                     point = points_transformed[np.argmin(dists)]
-                                    distance = np.linalg.norm(point - constr_position)
+                                    distance = np.linalg.norm(point - anchor_position)
 
                                     if distance < closest_distance:
                                         closest_distance = distance
                                         closest_prim_path, closest_point, closest_obj = mesh_prim_path, point, obj
 
-                        move_results.append((closest_prim_path, PoseAPI.get_world_pose(closest_prim_path), constr_position))
+                        move_results.append((closest_prim_path, PoseAPI.get_world_pose(closest_prim_path), anchor_position))
 
-                results[obj_name][constr_type]["move"] = move_results
+                results[obj_name][anchor_type]["move"] = move_results
 
         return results
     
@@ -566,55 +566,55 @@ class OGEnv:
         action_panda[self.robot.name] = np.append(action[:-2], gripper_command)
         self.og_env.step(action_panda[self.robot.name])
         
-    def get_constr_position(self, register_constr):
+    def get_anchor_position(self, register_anchor):
         """
-        Get current 3D position and orientation of a constraint relative to robot start.
+        Get current 3D position and orientation of a anchor relative to robot start.
 
         Args:
-            register_constr (tuple): (prim_path, initial_pose, constraint_point)
+            register_anchor (tuple): (prim_path, initial_pose, anchor_point)
 
         Returns:
             list: Position (xyz) relative to robot start + rotation quaternion
         """
-        closest_prim_path, init_pose, closest_point = register_constr
+        closest_prim_path, init_pose, closest_point = register_anchor
         prim_path_xyzw = np.array(init_pose[1])
         init_pose = pose2mat(init_pose)
         centering_transform = pose_inv(init_pose)
         centered = np.dot(centering_transform, np.append(closest_point, 1))[:3]
         curr_pose = pose2mat(PoseAPI.get_world_pose(closest_prim_path))
-        constr_positions = np.dot(curr_pose, np.append(centered, 1))[:3] - self.robot_initial_position
-        return np.hstack((constr_positions, prim_path_xyzw)).tolist()
+        anchor_positions = np.dot(curr_pose, np.append(centered, 1))[:3] - self.robot_initial_position
+        return np.hstack((anchor_positions, prim_path_xyzw)).tolist()
 
-    def get_movable_constr_pos(self, register_constr_state):
+    def get_movable_anchor_pos(self, register_anchor_state):
         """
-        Wraps static constraint states with position retrieval functions.
+        Wraps static anchor states with position retrieval functions.
 
         Args:
-            register_constr_state (dict): Static states of constraints.
+            register_anchor_state (dict): Static states of anchors.
 
         Returns:
-            dict: Constraint states updated with callable position getters,
+            dict: Anchor states updated with callable position getters,
                 merged with initial orientations.
         """
-        results = copy.deepcopy(register_constr_state)
+        results = copy.deepcopy(register_anchor_state)
 
-        for obj_name, constr_types in register_constr_state.items():  
-            for constr_type in ['extracted', 'refined']: 
-                if constr_type in constr_types:
-                    results[obj_name][constr_type]["move"] = [
-                        partial(self.get_constr_position, constr) for constr in constr_types[constr_type]["move"]
+        for obj_name, anchor_types in register_anchor_state.items():  
+            for anchor_type in ['extracted', 'refined']: 
+                if anchor_type in anchor_types:
+                    results[obj_name][anchor_type]["move"] = [
+                        partial(self.get_anchor_position, anchor) for anchor in anchor_types[anchor_type]["move"]
                     ]
         return self.merge_orientation_to_init(results)
     
     def merge_orientation_to_init(self, data):
         """
-        Appends orientation (quaternion) from registered constraints to each init position.
+        Appends orientation (quaternion) from registered anchors to each init position.
 
         Args:
-            data (dict): Constraint data with 'init' positions and 'move' callbacks.
+            data (dict):  Data with 'init' positions and 'move' callbacks.
 
         Returns:
-            dict: Updated constraint data with orientation merged into each init.
+            dict: Updated anchor data with orientation merged into each init.
         """
         for obj_name, obj_data in data.items():
             if 'extracted' in obj_data:
