@@ -308,11 +308,11 @@ class LMP_interface():
         gripper_command = self._env.last_gripper_command
         
         # Extract and clean target code from costs
-        target_code = re.search(r"#\s*Target\s*(.*?)#\s*Cost", costs, re.DOTALL).group(1)
+        target_code = re.search(r"#\s*Target\s*(.*?)#\s*Cost", costs).group(1)
         target_code = "\n".join([line.lstrip() for line in target_code.splitlines()])
         
         # Preprocess cost string (remove target section)
-        compute_costs_str = re.sub(r'#\s*Target.*?#\s*Cost', '# Cost', costs, flags=re.DOTALL)
+        compute_costs_str = re.sub(r'#\s*Target.*?#\s*Cost', '# Cost', costs)
         
         while True:
             if not pre_conditions():
