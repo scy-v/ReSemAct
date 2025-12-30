@@ -38,12 +38,6 @@ git clone -b v1.1.0 https://github.com/StanfordVL/BEHAVIOR-1K.git
 cd BEHAVIOR-1K/
 ```
 
-Install compatible PyTorch version (check CUDA compatibility):
-
-```bash
-pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu118
-```
-
 Install OmniGibson:
 
 ```bash
@@ -70,9 +64,6 @@ git clone https://github.com/scy-v/ReSemAct.git
 cd ReSemAct
 git clone https://github.com/CASIA-IVA-Lab/FastSAM.git
 ```
-
-Download the [FastSAM model weights](https://drive.usercontent.google.com/download?id=1m1sjY4ihXBU1fZXdQ-Xdj-mDltW-2Rqv&export=download)  
-Place the weights inside the `ReSemAct/weights/` directory.
 
 ### 6. Install Additional Dependencies
 ```bash
