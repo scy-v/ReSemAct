@@ -4,9 +4,9 @@
   <a href="https://ReSemAct.github.io/">[Project Page]</a>
 </h3>
 
-<p align="center">
+<!-- <p align="center">
   <img src="videos/task.gif" alt="task video">
-</p>
+</p> -->
 
 ---
 
