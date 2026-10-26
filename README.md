@@ -1,12 +1,15 @@
-# ReSemAct: Advancing Fine-Grained Robotic Manipulation via Semantic Structuring and Affordance Refinement
+<h1 align="center">ReSemAct: Advancing Fine-Grained Robotic Manipulation via Semantic Structuring and Affordance Refinement</h1>
 
-<h3 align="center">
-  <a href="https://ReSemAct.github.io/">[Project Page]</a>
-</h3>
+<p align="center">
+  <a href="https://resemact.github.io/"><img src="https://img.shields.io/badge/Project-Website-007ACC" alt="Project Website"></a>
+  <a href="https://arxiv.org/abs/2507.18262"><img src="https://img.shields.io/static/v1?label=Paper&amp;message=arXiv&amp;color=E45756&amp;logo=arxiv" alt="Paper"></a>
+  <a href="https://github.com/scy-v/ReSemAct"><img src="https://img.shields.io/badge/Code-GitHub-7562B5?logo=github" alt="Code on GitHub"></a>
+  <a href="https://github.com/scy-v/ReSemAct/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-2E9D62" alt="MIT License"></a>
+</p>
 
-<!-- <p align="center">
-  <img src="videos/task.gif" alt="task video">
-</p> -->
+<p align="center">
+  <img src="assets/figure1.png" alt="ReSemAct overall framework (Figure 1)" width="100%">
+</p>
 
 ---
 
@@ -163,3 +166,18 @@ python run.py [--load_cache] [--visualize]
 
 - **Code Snippets Reference**  
   Part of the environment code is adapted from the [ReKep](https://rekep-robot.github.io/) project.
+
+
+---
+
+## 📝 Citation
+
+```bibtex
+@article{su2025resemact,
+  title   = {ReSemAct: Advancing Fine-Grained Robotic Manipulation via Semantic Structuring and Affordance Refinement},
+  author  = {Su, Chenyu and Shang, Weiwei and Qian, Chen and Zhang, Fei and Cong, Shuang},
+  journal = {arXiv preprint arXiv:2507.18262},
+  year    = {2025},
+  url     = {https://arxiv.org/abs/2507.18262}
+}
+```
